@@ -298,17 +298,37 @@ C'est la seule partie du fichier qu'un collègue doit modifier.
 
 ## 13. Installation sur la tablette
 
-1. **Héberger la page** : GitHub Pages (dépôt public, fichier à la racine) ou tout serveur web. Le rechargement quotidien s'appuie sur cette adresse.
-2. **Tablette** : Android 5 minimum. Vérifier l'état de la batterie (gonflement) avant fixation. Rotation bloquée en paysage, luminosité adaptative désactivée, mises à jour automatiques coupées, compte Google retiré si inutile.
-3. **Fully Kiosk Browser** (gratuit) :
-   - adresse de démarrage = l'adresse de la page ;
-   - **Enable JavaScript Interface** (Advanced Web Settings) : indispensable pour l'extinction réelle de l'écran ;
-   - **Autoplay Audio** : recommandé pour la voix ;
-   - **désactiver** la planification d'écran de Fully : la page s'en charge ;
-   - garder la page chargée en veille (par défaut).
-4. **Wi-Fi du foyer** : réseau invité si possible ; la page n'envoie aucune donnée, ne demande aucun compte. Le retour du Wi-Fi le matin idéalement avant 6h.
-5. **Fixation** : support mural à hauteur des yeux, câble en goulotte, alimentation hors de portée.
-6. **Vérification** : le pied de page affiche une heure de mise à jour du jour et « MétéoSuisse ».
+### Configuration automatique via Claude Code
+Prérequis : tablette branchée en USB, mode développeur activé (Paramètres > À propos > taper 7× sur Numéro de build > Options développeur > Débogage USB : ON).
+
+Quand l'utilisateur branche la tablette et demande de la configurer, exécuter :
+```
+bash configurer-tablette.sh
+```
+Ce script fait tout via ADB : rotation paysage, luminosité, veille, volume, Play Store désactivé, apps inutiles désactivées, Fully Kiosk téléchargé/installé/lancé avec l'URL de la page. ADB est installé dans `%USERPROFILE%\platform-tools\adb.exe`.
+
+Pour restaurer la tablette à ses réglages d'origine : `bash restaurer-tablette.sh`.
+
+### Réglages manuels restants (sur la tablette, dans Fully Kiosk)
+Ces 4 réglages ne sont pas configurables via ADB :
+1. Settings > Web Content > **Enable JavaScript Interface** : ON (extinction réelle de l'écran)
+2. Settings > Web Content > **Autoplay Audio** : ON (voix dès le premier toucher)
+3. Settings > Device Management > **Keep Screen On** : ON
+4. Settings > **Kiosk Mode** : ON + définir un code PIN (noter dans le classeur)
+5. **NE PAS** activer Screen Off/On Schedule (la page gère)
+
+### Hébergement
+GitHub Pages : `https://zartuf27.github.io/meteo-mandchourie/meteo-mandchourie.html`
+Pour modifier la page : éditer le fichier sur GitHub ou pousser depuis ce dossier.
+
+### Réseau
+Wi-Fi du foyer, réseau invité si possible. La page n'envoie aucune donnée, ne demande aucun compte. Le retour du Wi-Fi le matin idéalement avant 6h.
+
+### Fixation
+Support mural à hauteur des yeux, câble en goulotte, alimentation hors de portée. Vérifier l'état de la batterie (gonflement) avant fixation.
+
+### Vérification
+Le pied de page affiche une heure de mise à jour du jour et « MétéoSuisse ».
 
 ---
 
