@@ -39,7 +39,9 @@ Une tablette murale, dans la salle commune de la Résidence La Mandchourie (Del�
 | Modèle météo | MétéoSuisse ICON-CH via Open-Meteo, repli automatique sur le modèle mondial | Résolution 1–2 km, adaptée au relief jurassien |
 | Fériés | Liste du foyer (pas seulement cantonale) + ponts | Tirée des documents « jours fériés Mandchourie » 2024, 2025, 2026 |
 | Permanences | Calculées par une règle, plus liste d'exceptions | Neuf années de plannings (2018–2026) suivent la même règle : samedi 13–19 juillet pour 23 jours, samedi 19–25 décembre pour 16 jours |
-| Hébergement | GitHub Pages recommandé (pas le homelab) | Gratuit, jamais en panne, modifiable par un collègue sans dépendre du matériel personnel de Ludovic |
+| Voix : ElevenLabs ou Edge TTS ? | Edge TTS (voix Ariane) | Gratuit, sans clé, accent suisse romand, qualité validée. ElevenLabs : quota insuffisant sur le plan gratuit |
+| Bonnet séparé du manteau | Oui, seuil à 3 °C | Un bonnet à 5 °C de ressenti en septembre était excessif ; le manteau seul suffit pour un matin frais d'automne |
+| Hébergement | GitHub Pages (fait) | Gratuit, jamais en panne, modifiable par un collègue sans dépendre du matériel personnel de Ludovic |
 
 ---
 
@@ -49,13 +51,14 @@ Une tablette murale, dans la salle commune de la Résidence La Mandchourie (Del�
 meteo-mandchourie.html   la page complète (HTML + CSS + JS, aucun fichier externe obligatoire)
 generer-audio.py         script Python pour enregistrer les 22 phrases avec ElevenLabs (payant/plan gratuit)
 generer-audio-edge.py    même chose, gratuit et sans clé, voix Microsoft Edge, accent suisse romand (fr-CH-Ariane ; Fabrice pour une voix d'homme) — à préférer
+test_complet.py          tests automatisés Playwright (38 tests : rendu, fériés, permanences, type de jour, images, voix)
 INSTALLATION.md          pas à pas : GitHub Pages, réglages Android, Fully Kiosk, fixation
 mode-d-emploi-equipe.html  fiche imprimable d'une page pour le classeur de l'équipe
 test-residents.md        protocole et feuille de relevé du test FALC avec les résidents
 note-colloque.md         texte court pour présenter le projet au colloque
 CLAUDE.md                ce document
 images/                  19 pictogrammes Mulberry Symbols (SVG) + ATTRIBUTION.txt, voir §9
-audio/                   (facultatif) phrases enregistrées, voir §10
+audio/                   22 phrases enregistrées (voix Ariane, Edge TTS, +30 % volume), voir §10
 ```
 
 La page est **autonome** : un seul fichier, pas de bibliothèque, pas de police à télécharger (police système : Atkinson Hyperlegible si installée, sinon Verdana). Elle fonctionne ouverte directement depuis un fichier, mais le rechargement quotidien (§7) demande qu'elle soit servie par un serveur web.
@@ -197,7 +200,7 @@ Tous en SVG dans le fichier, aucun téléchargement. Couleurs codées : soleil j
 Noms : `soleil, eclaircies, nuages, brouillard, pluie, neige, orage` (météo) · `vent, chaud, gel` (informations) · `manteau, bonnet, veste, pull, tshirt, kway, parapluie, casquette, eau` (vêtements).
 
 ### Remplacement par des fichiers
-Régler `images_dossier: 'images/'` et déposer des fichiers `nom.png` (ou `.jpg` avec `images_extension`) dans ce dossier. Chaque picto est remplacé individuellement ; si le fichier manque ou ne charge pas, le dessin revient automatiquement (fonction `image()`, gestionnaire `onerror`).
+Régler `images_dossier: 'images/'` et déposer des fichiers `nom.png` (ou `.jpg` avec `images_extension`) dans ce dossier. Chaque picto est remplacé individuellement ; si le fichier manque ou ne charge pas, le dessin revient automatiquement (attribut `data-fallback` + listener capture sur `error`, compatible CSP).
 
 ### Banques recommandées (gratuites, reconnues en accessibilité cognitive)
 - **ARASAAC** (arasaac.org) — la référence, gouvernement d'Aragon, licence CC BY-NC-SA. Utilisable par un foyer ; attribution obligatoire (une ligne au dos du cadre ou dans le dossier projet : « Pictogrammes : ARASAAC, Gouvernement d'Aragon, CC BY-NC-SA »). Mots à chercher : soleil, nuage, pluie, neige, orage, brouillard, vent, manteau, bonnet, veste, pull, t-shirt, imperméable, parapluie, casquette, boire.
@@ -340,14 +343,14 @@ Deux ou trois résidents, un par un, tablette en mode `?demo=`. Deux questions s
 
 ---
 
-## 16. Ce qui reste à faire (état au 9 septembre 2026)
+## 16. Ce qui reste à faire (état au 10 septembre 2026)
 
-1. Tester la page sur un téléphone avec Internet ; vérifier « MétéoSuisse » dans le pied de page (non testable depuis l'environnement de développement, réseau restreint).
+1. ~~Tester la page avec Internet~~ fait : MétéoSuisse confirmé dans le pied de page, données reçues correctement.
 2. Test FALC avec les résidents (§14), puis ajustement des seuils, des mots, et choix pictos/photos.
 3. Information au colloque ; accord pour la fixation et l'accès Wi-Fi.
-4. Hébergement, installation Fully Kiosk, réglages Android.
+4. ~~Hébergement~~ fait : GitHub Pages, `https://zartuf27.github.io/meteo-mandchourie/meteo-mandchourie.html`. Reste : installation Fully Kiosk et réglages Android sur la tablette.
 5. Chaque décembre, vérifier que les dates de permanence publiées par la direction correspondent au calcul ; sinon saisir l'exception dans `permanences`.
-6. Facultatif : enregistrer les 22 phrases avec `generer-audio-edge.py` (gratuit) ou ElevenLabs, ou installer la voix française Google.
+6. ~~Phrases enregistrées~~ fait : 22 MP3 (voix Ariane, Edge TTS, +30 % volume) dans `audio/`.
 7. Facultatif : comparer avec les pictos ARASAAC (à télécharger à la main depuis arasaac.org, mêmes noms de fichiers) si les résidents connaissent déjà cette banque.
 8. Revoir les seuils après le premier hiver.
 9. ~~Fiche « mode d'emploi »~~ faite : `mode-d-emploi-equipe.html`.
@@ -356,14 +359,17 @@ Deux ou trois résidents, un par un, tablette en mode `?demo=`. Deux questions s
 
 ## 17. Tests effectués
 
-- Syntaxe JavaScript validée à chaque modification.
-- Rendu dans Chromium headless (Playwright), paysage 1280×800 et portrait 800×1280, pour les 10 situations de démonstration et le cas sans données : aucune erreur console, aucun débordement.
-- Fériés 2025 calculés = liste du foyer (15 jours), aucun manquant ; fériés 2026 = document du foyer (13 jours), aucun manquant, aucun en trop ; 16 août 2024 et 1er novembre 2024 reconnus.
-- Permanences calculées = plannings du foyer pour les étés 2018 à 2026 et les hivers 2018 à 2025, sans écart (une seule exception historique, hiver 2021-22, documentée).
+38 tests automatisés (`test_complet.py`, Playwright, Chromium headless) — tous passent.
+
+- Syntaxe JavaScript validée à chaque modification : aucune erreur console.
+- Rendu paysage 1280×800 et portrait 800×1280, pour les 10 situations de démonstration et le cas sans données : aucune erreur console, aucun débordement.
+- Fériés 2025 calculés = 18 jours (13 fixes/mobiles + Toussaint + 4 ponts dont 3 janvier et 26 décembre), aucun manquant ; fériés 2026 = 16 jours, aucun manquant, aucun en trop ; 16 août 2024 et 1er novembre 2024 reconnus.
+- Permanences calculées = plannings du foyer pour les étés 2018 à 2026 et les hivers 2018 à 2026, sans écart (une seule exception historique, hiver 2021-22, documentée). Vérifié : été 2026 = 18 juillet – 9 août, hiver 2026-27 = 19 décembre – 3 janvier.
 - Type de jour vérifié : 2 mai 2025 → weekend (pont), 25 juillet 2025 → permanence, 24 décembre 2025 → permanence, 10 septembre 2025 → semaine, 3 avril 2026 (Vendredi saint) → weekend.
 - Repli des images : dossier configuré sans fichiers → tous les pictos dessinés réapparaissent, aucune image cassée.
-- Déclenchement de la voix : deux touchers tactiles simulés sur la page → deux lectures ; aucun appel sur `pointerdown` seul.
-- Non testé ici : appel réel à Open-Meteo/MétéoSuisse, voix Android, commande d'écran Fully Kiosk. À valider sur la tablette.
+- Déclenchement de la voix : deux clics simulés sur la page → deux appels à `lire()` ; aucun `addEventListener('pointerdown')` dans le code.
+- Appel réel à Open-Meteo/MétéoSuisse vérifié le 10 septembre 2026 : données reçues, modèle MétéoSuisse confirmé, température et code météo cohérents.
+- Non testé ici : voix Android, commande d'écran Fully Kiosk. À valider sur la tablette.
 
 ---
 
@@ -373,7 +379,7 @@ Deux ou trois résidents, un par un, tablette en mode `?demo=`. Deux questions s
 - Ne pas mettre la clé ElevenLabs dans la page : la page est publique.
 - Ne pas ajouter d'informations à l'écran (menu, activités…) : chaque ajout dégrade la lisibilité de la météo.
 - Ne pas remettre les animations sans test avec les résidents.
-- Ne pas changer la liste des phrases dans la page sans mettre à jour `generer-audio.py` et régénérer les MP3 (les noms de fichiers dérivent des phrases).
+- Ne pas changer la liste des phrases dans la page sans mettre à jour `generer-audio-edge.py` / `generer-audio.py` et régénérer les MP3 (les noms de fichiers dérivent des phrases).
 - Ne pas remplacer `localStorage` : c'est ce qui permet l'affichage du matin sans Wi-Fi.
 - Ne pas laisser Fully Kiosk et la page gérer tous les deux les horaires d'écran.
 - Les données du personnel et des résidents lues dans les plannings 2014–2026 n'ont servi qu'à déduire les horaires ; aucune n'est dans la page et aucune ne doit y entrer.
