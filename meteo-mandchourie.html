@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Météo – La Mandchourie</title>
+<style>
+  :root{
+    --encre:#111111; --gris:#8C8C8C; --trait:#E6E6E6;
+    --soleil:#FFB703; --soleil2:#FB8500;
+    --nuage:#C9D3DF; --nuage-fonce:#8FA0B5;
+    --pluie:#2F6FD3; --orage:#5B4FA6; --brume:#C9D0D8; --vent:#5F5E5A;
+    --manteau:#3B5B8C; --pull:#D1495B; --tshirt:#2A9D8F; --bonnet:#C2477F; --alerte:#B3261E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
+  html,body{height:100%;color:var(--encre);background:#fff;
+    font-family:"Atkinson Hyperlegible","Verdana","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow:hidden;cursor:pointer}
+  body{display:grid;grid-template-rows:auto 1fr auto auto auto auto;padding:2.5vmin 5vmin;gap:1.5vmin;transition:background 2s}
+  body[data-meteo="soleil"]{background:#FFF8E1}
+  body[data-meteo="eclaircies"]{background:#FFFBEE}
+  body[data-meteo="nuages"],body[data-meteo="brouillard"]{background:#F1F4F7}
+  body[data-meteo="pluie"]{background:#EAF1FB}
+  body[data-meteo="neige"]{background:#F0F6FC}
+  body[data-meteo="orage"]{background:#EEEDF6}
+
+  .jour{font-size:6vmin;font-weight:800;text-align:center;line-height:1.1}
+  .date{font-size:4.6vmin;font-weight:700;text-align:center;margin-top:.3vmin}
+
+  .centre{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:3vmin;min-height:0;overflow:hidden}
+  .picto{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .picto svg,.picto img{width:min(38vmin,34vh);height:min(38vmin,34vh);max-width:100%;overflow:visible;object-fit:contain}
+  .mot{font-size:min(6.5vmin,5.5vh);font-weight:800;margin-top:.3vmin;text-align:center}
+  .tempbloc{text-align:center}
+  .moment{font-size:5vmin;font-weight:700}
+  .temp{font-size:min(32vmin,30vh);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.04em}
+  .temp small{font-size:.42em;vertical-align:top;font-weight:600;margin-left:.04em}
+
+  .infos{display:flex;flex-direction:column;gap:1vmin;border-top:.6vmin solid var(--trait);padding-top:1.5vmin}
+  .infos:empty{display:none}
+  .info{display:flex;align-items:center;gap:3vmin;font-size:5vmin;font-weight:800;line-height:1.2}
+  .info svg,.info img{width:10vmin;height:10vmin;flex-shrink:0;object-fit:contain}
+  .info.alerte{color:var(--alerte)}
+
+  .habits{display:flex;align-items:center;gap:4vmin;border-top:.6vmin solid var(--trait);padding-top:1.5vmin}
+  .habits .pictos{display:flex;gap:2.5vmin}
+  .habits svg,.habits img{width:15vmin;height:15vmin;overflow:visible;object-fit:contain}
+  .habits .phrase{font-size:5vmin;font-weight:800;line-height:1.3;white-space:pre-line;text-align:left;flex:1}
+  .ecouter{width:17vmin;height:17vmin;border-radius:50%;border:.8vmin solid var(--encre);background:#fff;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--encre)}
+  .ecouter svg{width:9.5vmin;height:9.5vmin}
+  .ecouter:active,.ecouter.parle{background:var(--encre);color:#fff}
+  .ecouter:focus-visible{outline:.8vmin solid var(--pluie);outline-offset:.5vmin}
+
+  @media (orientation:portrait){
+    .centre{grid-template-columns:1fr;grid-template-rows:1fr auto}
+    .picto svg{width:44vmin;height:44vmin}
+    .temp{font-size:26vmin}
+    .habits{flex-wrap:wrap}
+  }
+
+  .maj{font-size:2.2vmin;color:var(--gris);text-align:center}
+  .hors{display:none;font-size:2.4vmin;color:var(--gris);text-align:center;font-weight:700}
+  body.hors-horaire .hors{display:block}
+  .nuit{position:fixed;inset:0;background:#000;display:none}
+  body.nuit-active .nuit{display:block}
+
+  .rayons{transform-origin:100px 100px;animation:tourne 60s linear infinite}
+  .rayons-petits{transform-origin:74px 72px;animation:tourne 60s linear infinite}
+  .nuage-a{animation:derive 9s ease-in-out infinite}
+  .goutte{animation:tombe 1.6s ease-in infinite}
+  .goutte:nth-child(2){animation-delay:.5s}.goutte:nth-child(3){animation-delay:1s}
+  .flocon{animation:flotte 4s ease-in-out infinite}
+  .flocon:nth-child(2){animation-delay:1.3s}.flocon:nth-child(3){animation-delay:2.6s}
+  @keyframes tourne{to{transform:rotate(360deg)}}
+  @keyframes derive{0%,100%{transform:translateX(0)}50%{transform:translateX(7px)}}
+  @keyframes tombe{0%{transform:translateY(-8px);opacity:0}20%{opacity:1}100%{transform:translateY(34px);opacity:0}}
+  @keyframes flotte{0%{transform:translate(0,-10px);opacity:0}15%{opacity:1}50%{transform:translate(6px,14px)}100%{transform:translate(-4px,38px);opacity:0}}
+  body:not(.anime) *{animation:none!important}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+  <header>
+    <div class="jour">Aujourd'hui</div>
+    <div class="date" id="date">…</div>
+  </header>
+
+  <main class="centre">
+    <div class="picto">
+      <div id="svg"></div>
+      <div class="mot" id="mot"></div>
+    </div>
+    <div class="tempbloc">
+      <div class="moment" id="moment"></div>
+      <div class="temp" id="temp"></div>
+    </div>
+  </main>
+
+  <section class="infos" id="infos"></section>
+
+  <section class="habits" id="habits" hidden>
+    <div class="pictos" id="habits-pictos"></div>
+    <div class="phrase" id="habits-phrase"></div>
+    <button class="ecouter" id="ecouter" aria-label="Écouter la météo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5L6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+      </svg>
+    </button>
+  </section>
+
+  <div class="hors" id="hors">Sur la tablette, l'écran est éteint à cette heure.</div>
+  <footer class="maj" id="maj"></footer>
+  <div class="nuit"></div>
+
+<script>
+/* ==========================================================
+   RÉGLAGES — c'est la seule partie à modifier
+   ========================================================== */
+const REGLAGES = {
+  latitude: 47.3639,          // Rue du Pont-Neuf 4, 2800 Delémont
+  longitude: 7.3448,
+  rafraichir_minutes: 30,
+  // Créneau critique : les résidents déjeunent à 7h et partent à 7h30. Entre ces heures, la page réessaie
+  // toutes les 5 minutes tant qu'elle n'a pas de météo reçue le jour même (utile si le Wi-Fi revient tard).
+  creneau_critique: { debut:'06:00', fin:'07:30', minutes:5 },
+  precharge_soir: '21:25',    // dernière demande de la journée, juste avant la veille : la météo du lendemain est mise en réserve
+  modele: 'meteoswiss_icon_seamless', // modèle MétéoSuisse ICON-CH (1–2 km), via Open-Meteo. '' = modèle mondial par défaut.
+                                      // Si MétéoSuisse ne répond pas, la page repasse d'elle-même sur le modèle par défaut.
+  ressenti_pour_les_habits: true,     // conseils basés sur la température ressentie (vent, humidité) ; l'écran affiche la vraie
+  seuil_pluie_pourcent: 50,           // probabilité de pluie sur la demi-journée à partir de laquelle on sort le k-way
+
+  heure_matin: 8,             // température affichée le matin = celle de 8h
+  heure_apres_midi: 14,       // picto de l'après-midi = temps prévu à 14h
+  bascule: '11:30',           // avant : « Ce matin » ; après : « Cet après-midi »
+
+  // Heures d'allumage de l'écran, d'après les plannings 2025 de la Mandchourie.
+  //  semaine    : présence éducative 6h30–11h30 et 16h–22h (résidents en atelier entre les deux)
+  //  weekend    : W1 9h–18h, W2 14h–22h ; s'applique aussi aux jours fériés et aux ponts
+  //  permanence : M1 8h–15h, M3 8h–17h, M2 14h–22h, tous les jours (ateliers fermés)
+  horaires: {
+    semaine:    [['06:00','11:30'],['16:00','21:30']],
+    weekend:    [['07:00','21:30']],
+    permanence: [['07:00','21:30']]
+  },
+  // Permanences (ateliers fermés, foyer ouvert toute la journée). Calculées automatiquement d'après
+  // les plannings 2018–2026 de la Mandchourie :
+  //  été   : du samedi compris entre le 13 et le 19 juillet, pendant 23 jours (3 semaines, jusqu'au dimanche)
+  //  hiver : du samedi compris entre le 19 et le 25 décembre, pendant 16 jours (jusqu'au dimanche après le 3 janvier)
+  permanences_automatiques: true,
+  permanences: [                 // exceptions ou périodes supplémentaires décidées par la direction, ex. ['2027-07-10','2027-08-01']
+  ],
+  // Jours fériés du foyer (planning des jours fériés Mandchourie 2025) :
+  // 1er et 2 janvier, Vendredi saint, Lundi de Pâques, 1er mai, Ascension, Lundi de Pentecôte,
+  // Fête-Dieu, 23 juin, 1er août, 15 août, 1er novembre, 25 décembre — et les ponts : le vendredi après
+  // un jeudi férié (Ascension, Fête-Dieu, 2 mai 2025, 16 août 2024) et le lundi avant un mardi férié (22 juin 2026).
+  ponts: true,
+  toussaint: true,               // 1er novembre : férié dans le Jura ; absent du planning 2025 (c'était un samedi). À confirmer.
+  gerer_l_ecran: true,        // false si Fully Kiosk gère déjà les horaires lui-même
+  ecran_noir_hors_kiosk: false, // hors Fully Kiosk (test sur téléphone/ordinateur) : true = calque noir aux heures d'extinction,
+                                // false = page visible avec la mention « écran éteint à cette heure sur la tablette »
+  recharger_a: '12:00',       // rechargement quotidien de la page (si Internet répond)
+
+  animations: false,          // FALC : pas d'animation. true pour réactiver les mouvements doux
+  voix: true,                 // lecture à voix haute quand on touche l'écran
+  audio_dossier: 'audio/',    // phrases enregistrées (voix Ariane, accent suisse romand, Edge TTS).
+                              // Vide : voix intégrée de la tablette. Si un fichier manque, la voix intégrée prend le relais.
+
+  // Images à la place des pictos dessinés (facultatif). Fichiers dans un dossier "images"
+  // à côté de cette page : pictos ARASAAC, Sclera, Mulberry, ou vos propres photos (fond blanc, carré).
+  // Nom du fichier = nom ci-dessous. Si un fichier manque, le picto dessiné est utilisé à la place.
+  images_dossier: 'images/',  // dossier livré : pictogrammes Mulberry Symbols (CC BY-SA). '' = pictos dessinés uniquement
+  images_extension: '.svg',
+  // noms possibles : soleil, eclaircies, nuages, brouillard, pluie, neige, orage
+  //                  vent, chaud, gel
+  //                  manteau, bonnet, veste, pull, tshirt, kway, parapluie, casquette, eau
+
+  seuil_manteau: 8,           // sous cette température : manteau chaud
+  seuil_bonnet: 3,            // sous cette température : bonnet
+  seuil_veste: 15,            // sous : veste
+  seuil_pull: 21,             // sous : pull ; au-dessus : t-shirt
+  seuil_chaleur: 28,          // au-dessus : casquette et eau
+  seuil_canicule: 32,         // alerte « Il fait très chaud »
+  seuil_gel: 0,               // alerte « Il gèle » (température du matin)
+  seuil_vent: 40              // km/h : « Il y a beaucoup de vent »
+};
+
+/* ==========================================================
+   Pictogrammes météo
+   ========================================================== */
+const NUAGE='M52 130a30 30 0 0 1 6-59 42 42 0 0 1 80-6 30 30 0 0 1 2 65z';
+const PICTOS={
+  soleil:`<svg viewBox="0 0 200 200"><g class="rayons" stroke="var(--soleil2)" stroke-width="13" stroke-linecap="round">
+    <line x1="100" y1="14" x2="100" y2="40"/><line x1="100" y1="160" x2="100" y2="186"/><line x1="14" y1="100" x2="40" y2="100"/><line x1="160" y1="100" x2="186" y2="100"/>
+    <line x1="39" y1="39" x2="58" y2="58"/><line x1="142" y1="142" x2="161" y2="161"/><line x1="39" y1="161" x2="58" y2="142"/><line x1="142" y1="58" x2="161" y2="39"/></g>
+    <circle cx="100" cy="100" r="48" fill="var(--soleil)"/></svg>`,
+  eclaircies:`<svg viewBox="0 0 200 200"><g class="rayons-petits" stroke="var(--soleil2)" stroke-width="10" stroke-linecap="round">
+    <line x1="74" y1="10" x2="74" y2="28"/><line x1="12" y1="72" x2="30" y2="72"/><line x1="30" y1="28" x2="43" y2="41"/><line x1="105" y1="41" x2="118" y2="28"/><line x1="30" y1="116" x2="43" y2="103"/></g>
+    <circle cx="74" cy="72" r="36" fill="var(--soleil)"/>
+    <path class="nuage-a" d="M62 160a30 30 0 0 1 6-59 42 42 0 0 1 80-6 30 30 0 0 1 2 65z" fill="#fff" stroke="var(--nuage)" stroke-width="5"/></svg>`,
+  nuages:`<svg viewBox="0 0 200 200"><path d="${NUAGE}" fill="var(--nuage-fonce)"/>
+    <path class="nuage-a" d="M40 166a26 26 0 0 1 5-51 36 36 0 0 1 69-5 26 26 0 0 1 1 56z" fill="#fff" stroke="var(--nuage)" stroke-width="5"/></svg>`,
+  brouillard:`<svg viewBox="0 0 200 200"><path d="M52 108a30 30 0 0 1 6-59 42 42 0 0 1 80-6 30 30 0 0 1 2 65z" fill="var(--brume)"/>
+    <g stroke="var(--nuage-fonce)" stroke-width="11" stroke-linecap="round"><line x1="40" y1="134" x2="160" y2="134"/><line x1="56" y1="156" x2="144" y2="156"/><line x1="72" y1="178" x2="128" y2="178"/></g></svg>`,
+  pluie:`<svg viewBox="0 0 200 200"><g stroke="var(--pluie)" stroke-width="11" stroke-linecap="round">
+    <line class="goutte" x1="72" y1="140" x2="64" y2="164"/><line class="goutte" x1="106" y1="140" x2="98" y2="164"/><line class="goutte" x1="140" y1="140" x2="132" y2="164"/></g>
+    <path class="nuage-a" d="${NUAGE}" fill="var(--nuage-fonce)"/></svg>`,
+  neige:`<svg viewBox="0 0 200 200"><g fill="#fff" stroke="var(--pluie)" stroke-width="4">
+    <circle class="flocon" cx="68" cy="140" r="11"/><circle class="flocon" cx="104" cy="140" r="11"/><circle class="flocon" cx="140" cy="140" r="11"/></g>
+    <path class="nuage-a" d="${NUAGE}" fill="var(--nuage)"/></svg>`,
+  orage:`<svg viewBox="0 0 200 200"><polygon points="108,116 82,158 102,158 90,192 126,140 106,140 118,116" fill="var(--soleil)"/>
+    <path class="nuage-a" d="M52 112a30 30 0 0 1 6-59 42 42 0 0 1 80-6 30 30 0 0 1 2 65z" fill="var(--orage)"/></svg>`,
+  inconnu:`<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="var(--gris)" stroke-width="10"/>
+    <text x="100" y="128" text-anchor="middle" font-size="90" font-weight="700" fill="var(--gris)">?</text></svg>`
+};
+const ICONES={
+  vent:`<svg viewBox="0 0 200 200"><g fill="none" stroke="var(--vent)" stroke-width="12" stroke-linecap="round">
+    <path d="M20 80h100a22 22 0 1 0-22-22"/><path d="M20 120h140a22 22 0 1 1-22 22"/></g></svg>`,
+  chaud:`<svg viewBox="0 0 200 200"><rect x="82" y="20" width="36" height="110" rx="18" fill="#fff" stroke="var(--alerte)" stroke-width="8"/>
+    <circle cx="100" cy="150" r="32" fill="var(--alerte)"/><rect x="92" y="50" width="16" height="90" fill="var(--alerte)"/></svg>`,
+  gel:`<svg viewBox="0 0 200 200"><g stroke="var(--pluie)" stroke-width="10" stroke-linecap="round">
+    <line x1="100" y1="20" x2="100" y2="180"/><line x1="31" y1="60" x2="169" y2="140"/><line x1="31" y1="140" x2="169" y2="60"/>
+    <path d="M82 38l18 18 18-18M82 162l18-18 18 18M42 80l24 6 6-24M134 138l24-6 6 24M42 120l24-6 6 24M134 62l24 6 6-24"/></g></svg>`
+};
+const HABITS={
+  manteau:`<svg viewBox="0 0 200 200"><path d="M60 40l40-18 40 18 34 22-16 40-18-8v96H60v-96l-18 8-16-40z" fill="var(--manteau)"/>
+    <line x1="100" y1="60" x2="100" y2="190" stroke="#fff" stroke-width="6"/><circle cx="100" cy="90" r="5" fill="#fff"/><circle cx="100" cy="125" r="5" fill="#fff"/><circle cx="100" cy="160" r="5" fill="#fff"/></svg>`,
+  veste:`<svg viewBox="0 0 200 200"><path d="M66 40l34-14 34 14 28 14v100H150v30H50v-30H38V54z" fill="var(--manteau)"/>
+    <path d="M38 54h24v100H38zM138 54h24v100h-24z" fill="var(--manteau)" stroke="#fff" stroke-width="4"/>
+    <path d="M100 26l-18 30h36z" fill="#fff"/><path d="M82 26l-8 22 26 8 26-8-8-22" fill="none" stroke="#fff" stroke-width="5"/>
+    <line x1="100" y1="56" x2="100" y2="184" stroke="#fff" stroke-width="6" stroke-dasharray="8 6"/></svg>`,
+  pull:`<svg viewBox="0 0 200 200"><path d="M66 36l34-12 34 12 28 14v100H150v34H50v-34H38V50z" fill="var(--pull)"/>
+    <path d="M38 50h24v100H38zM138 50h24v100h-24z" fill="var(--pull)" stroke="#fff" stroke-width="4"/>
+    <path d="M80 36a20 12 0 0 0 40 0" fill="none" stroke="#fff" stroke-width="7"/><line x1="50" y1="172" x2="150" y2="172" stroke="#fff" stroke-width="5"/></svg>`,
+  tshirt:`<svg viewBox="0 0 200 200"><path d="M66 36l34-12 34 12 36 22-16 34-20-8v88H66v-88l-20 8-16-34z" fill="var(--tshirt)"/>
+    <path d="M80 36a20 12 0 0 0 40 0" fill="none" stroke="#fff" stroke-width="7"/></svg>`,
+  bonnet:`<svg viewBox="0 0 200 200"><circle cx="100" cy="30" r="14" fill="#fff" stroke="var(--bonnet)" stroke-width="6"/>
+    <path d="M44 120a56 56 0 0 1 112 0z" fill="var(--bonnet)"/><rect x="36" y="112" width="128" height="26" rx="8" fill="var(--bonnet)" stroke="#fff" stroke-width="5"/>
+    <path d="M52 150h96v20H72v22H52z" fill="var(--bonnet)" opacity=".75"/></svg>`,
+  parapluie:`<svg viewBox="0 0 200 200"><path d="M22 104a78 78 0 0 1 156 0z" fill="var(--pluie)"/>
+    <path d="M22 104q19-14 39 0q20-14 39 0q20-14 39 0q20-14 39 0" fill="none" stroke="#fff" stroke-width="5"/>
+    <line x1="100" y1="104" x2="100" y2="176" stroke="var(--encre)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M100 176a12 12 0 0 1-24 0" fill="none" stroke="var(--encre)" stroke-width="8" stroke-linecap="round"/></svg>`,
+  kway:`<svg viewBox="0 0 200 200"><path d="M70 40a30 30 0 0 1 60 0v10H70z" fill="var(--soleil)" stroke="var(--soleil2)" stroke-width="5"/>
+    <path d="M64 50l36 0 36 0 34 24-14 36-18-8v88H62v-88l-18 8-14-36z" fill="var(--soleil)" stroke="var(--soleil2)" stroke-width="5"/>
+    <line x1="100" y1="50" x2="100" y2="190" stroke="var(--soleil2)" stroke-width="7"/><circle cx="100" cy="60" r="7" fill="#fff"/></svg>`,
+  casquette:`<svg viewBox="0 0 200 200"><path d="M40 110a60 60 0 0 1 120 0z" fill="var(--pull)"/>
+    <path d="M40 110h150a14 14 0 0 1 0 26H40z" fill="var(--pull)" opacity=".8"/><rect x="34" y="104" width="132" height="14" rx="6" fill="#fff" stroke="var(--pull)" stroke-width="4"/></svg>`,
+  eau:`<svg viewBox="0 0 200 200"><path d="M78 24h44v28l10 14v110a12 12 0 0 1-12 12H80a12 12 0 0 1-12-12V66l10-14z" fill="#fff" stroke="var(--pluie)" stroke-width="8"/>
+    <path d="M72 110h56v72a8 8 0 0 1-8 8H80a8 8 0 0 1-8-8z" fill="var(--pluie)" opacity=".5"/></svg>`
+};
+
+/* fichier image si le dossier est configuré, sinon picto dessiné ; si le fichier manque, retour au picto */
+const BANQUES={...PICTOS,...ICONES,...HABITS};
+function image(nom){
+  if(!REGLAGES.images_dossier) return BANQUES[nom];
+  return `<img src="${REGLAGES.images_dossier+nom+REGLAGES.images_extension}" alt="" onerror="this.outerHTML=BANQUES['${nom}']">`;
+}
+
+/* code météo WMO → picto, mot, pluie ?, neige ? */
+function interpreter(code){
+  if(code===0)             return {picto:'soleil',mot:'Soleil'};
+  if(code===1||code===2)   return {picto:'eclaircies',mot:'Soleil et nuages'};
+  if(code===3)             return {picto:'nuages',mot:'Nuages'};
+  if(code===45||code===48) return {picto:'brouillard',mot:'Brouillard'};
+  if((code>=51&&code<=67)||(code>=80&&code<=82)) return {picto:'pluie',mot:'Pluie',pluie:true};
+  if((code>=71&&code<=77)||code===85||code===86) return {picto:'neige',mot:'Neige',neige:true};
+  if(code>=95)             return {picto:'orage',mot:'Orage',pluie:true};
+  return {picto:'inconnu',mot:''};
+}
+
+/* conseils : vêtements + informations (vent, chaleur, gel) */
+function conseiller(t, meteo, vent, matin){
+  const R=REGLAGES, pictos=[], lignes=[], infos=[];
+  if(t<R.seuil_manteau||meteo.neige){ pictos.push('manteau'); lignes.push('Mettez un manteau chaud.');
+    if(t<R.seuil_bonnet||meteo.neige){ pictos.push('bonnet'); lignes.push('Mettez un bonnet.'); } }
+  else if(t<R.seuil_veste){ pictos.push('veste'); lignes.push('Mettez une veste.'); }
+  else if(t<R.seuil_pull){ pictos.push('pull'); lignes.push('Mettez un pull à longues manches.'); }
+  else { pictos.push('tshirt'); lignes.push('Mettez un t-shirt.'); }
+  if(meteo.pluie){
+    if(pictos[0]==='veste'){ pictos.shift(); lignes.shift(); }
+    pictos.push('kway','parapluie'); lignes.push('Mettez un k\u2011way.','Prenez un parapluie.');
+  }
+  if(vent>=R.seuil_vent){
+    infos.push({icone:'vent',texte:'Il y a beaucoup de vent.'});
+    if(!meteo.pluie&&(pictos[0]==='tshirt'||pictos[0]==='pull')){ pictos.push('veste'); lignes.push('Prenez une veste.'); }
+  }
+  if(t>=R.seuil_canicule){ infos.unshift({icone:'chaud',texte:'Il fait très chaud.',alerte:true}); }
+  if(t>=R.seuil_chaleur&&!meteo.pluie){ pictos.push('casquette','eau'); lignes.push('Mettez une casquette.','Buvez beaucoup d\u2019eau.'); }
+  if(matin&&t<=R.seuil_gel){ infos.unshift({icone:'gel',texte:'Il gèle. Attention, ça glisse.',alerte:true}); }
+  return {pictos, phrase:lignes.join('\n'), infos:infos.slice(0,2)};
+}
+
+/* ==========================================================
+   Données Open-Meteo (3 jours, heure par heure), gardées en cache
+   ========================================================== */
+function urlMeteo(modele){
+  return `https://api.open-meteo.com/v1/forecast?latitude=${REGLAGES.latitude}&longitude=${REGLAGES.longitude}`
+    +`&hourly=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation_probability`
+    +`&daily=temperature_2m_max,apparent_temperature_max&timezone=Europe%2FZurich&forecast_days=3`
+    +(modele?`&models=${modele}`:'');
+}
+const CLE='meteo-mandchourie-v2';
+let donnees=null;
+function lireCache(){ try{const t=localStorage.getItem(CLE); if(t) donnees=JSON.parse(t);}catch(e){} }
+function ecrireCache(){ try{localStorage.setItem(CLE, JSON.stringify(donnees));}catch(e){} }
+
+function condenser(j){ // une fiche par jour : matin et après-midi
+  const R=REGLAGES, H=j.hourly, jours=[];
+  const maxi=(arr,a,b)=>{ const v=arr.slice(a,b+1).filter(x=>x!=null); return v.length?Math.max(...v):null; };
+  j.daily.time.forEach((date,i)=>{
+    const h=k=>i*24+k;
+    const t8=H.temperature_2m[h(R.heure_matin)], r8=H.apparent_temperature[h(R.heure_matin)];
+    jours.push({
+      date,
+      matin:{ temp:t8??j.daily.temperature_2m_max[i], ressenti:r8??t8, code:H.weather_code[h(R.heure_matin+1)],
+              vent:maxi(H.wind_speed_10m,h(7),h(12)), pluie:maxi(H.precipitation_probability,h(7),h(12)) },
+      apresmidi:{ temp:j.daily.temperature_2m_max[i], ressenti:j.daily.apparent_temperature_max?.[i]??j.daily.temperature_2m_max[i],
+              code:H.weather_code[h(R.heure_apres_midi)], vent:maxi(H.wind_speed_10m,h(12),h(21)), pluie:maxi(H.precipitation_probability,h(12),h(21)) }
+    });
+  });
+  return jours;
+}
+function donneesValides(j){ return j&&j.hourly&&Array.isArray(j.hourly.temperature_2m)&&j.hourly.temperature_2m.slice(0,24).some(x=>x!=null); }
+
+async function mettreAJour(){
+  if(DEMO) { afficher(); return; }
+  if(miseAJourEnCours) return; miseAJourEnCours=true;
+  for(const modele of [REGLAGES.modele,''].filter((m,i,a)=>a.indexOf(m)===i)){
+    try{
+      const r=await fetch(urlMeteo(modele),{cache:'no-store'});
+      if(!r.ok) throw new Error(r.status);
+      const j=await r.json();
+      if(!donneesValides(j)) throw new Error('données vides');
+      donnees={ jours:condenser(j), recu:new Date().toISOString(), modele:modele||'défaut' };
+      ecrireCache(); break;
+    }catch(e){ /* on essaie le modèle suivant ; sinon on garde le cache */ }
+  }
+  miseAJourEnCours=false;
+  afficher();
+}
+
+/* ==========================================================
+   Mode démonstration : ajouter ?demo=pluie à l'adresse
+   (soleil, eclaircies, nuages, brouillard, pluie, neige, orage, vent, canicule, gel)
+   ========================================================== */
+const DEMOS={
+  soleil:{code:0,temp:24,vent:10}, eclaircies:{code:2,temp:18,vent:15,pluie:70}, nuages:{code:3,temp:12,vent:12},
+  brouillard:{code:45,temp:6,vent:5}, pluie:{code:63,temp:9,vent:20}, neige:{code:73,temp:-1,vent:15},
+  orage:{code:95,temp:22,vent:35}, vent:{code:2,temp:16,vent:55}, canicule:{code:0,temp:34,vent:8}, gel:{code:1,temp:-4,vent:10}
+};
+const DEMO=DEMOS[new URLSearchParams(location.search).get('demo')]||null;
+
+/* ==========================================================
+   Affichage
+   ========================================================== */
+const JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const dateISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const minutes=hhmm=>{ const [h,m]=hhmm.split(':').map(Number); return h*60+m; };
+const $=id=>document.getElementById(id);
+let pictoAffiche='', texteVoix='', morceauxVoix=[];
+
+function situation(now){ // ce qu'il faut montrer maintenant
+  const matin=(now.getHours()*60+now.getMinutes())<minutes(REGLAGES.bascule);
+  if(DEMO) return {matin, ressenti:DEMO.temp, pluie:DEMO.pluie??0, ...DEMO};
+  const jour=donnees?donnees.jours.find(j=>j.date===dateISO(now)):null;
+  if(!jour) return null;
+  const s=matin?jour.matin:jour.apresmidi;
+  return {matin, temp:s.temp, ressenti:s.ressenti, code:s.code, vent:s.vent, pluie:s.pluie};
+}
+
+function afficher(){
+  const now=new Date(), j=JOURS[now.getDay()];
+  const dateTexte=j.charAt(0).toUpperCase()+j.slice(1)+' '+now.getDate()+' '+MOIS[now.getMonth()]+' '+now.getFullYear();
+  $('date').textContent=dateTexte;
+
+  const s=situation(now);
+  if(s){
+    const meteo=interpreter(s.code), t=Math.round(s.temp);
+    if(meteo.picto!==pictoAffiche){ $('svg').innerHTML=image(meteo.picto); pictoAffiche=meteo.picto; }
+    document.body.dataset.meteo=meteo.picto;
+    $('mot').textContent=meteo.mot;
+    $('moment').textContent=s.matin?'Ce matin':'Cet après-midi';
+    $('temp').innerHTML=t+'<small>°</small>';
+
+    const tHabits=REGLAGES.ressenti_pour_les_habits&&s.ressenti!=null?Math.round(s.ressenti):t;
+    const pluieProbable=meteo.pluie||(s.pluie!=null&&s.pluie>=REGLAGES.seuil_pluie_pourcent);
+    const c=conseiller(tHabits,{...meteo,pluie:pluieProbable},s.vent,s.matin);
+    $('infos').innerHTML=c.infos.map(i=>`<div class="info${i.alerte?' alerte':''}">${image(i.icone)}<span>${i.texte}</span></div>`).join('');
+    const html=c.pictos.map(image).join('');
+    if($('habits-pictos').innerHTML!==html) $('habits-pictos').innerHTML=html;
+    $('habits-phrase').textContent=c.phrase;
+    $('habits').hidden=false;
+    $('ecouter').hidden=!REGLAGES.voix;
+
+    const R=REGLAGES, phrasesTemps=[];
+    if(tHabits<R.seuil_manteau) phrasesTemps.push('Il va faire très froid.');
+    else if(tHabits<R.seuil_veste) phrasesTemps.push('Il va faire froid.');
+    else if(tHabits<R.seuil_pull) phrasesTemps.push('Il va faire doux.');
+    else if(t<R.seuil_canicule) phrasesTemps.push('Il va faire chaud.');
+    if(meteo.neige) phrasesTemps.push('Il va neiger.');
+    else if(meteo.picto==='orage') phrasesTemps.push('Il va y avoir de l\u2019orage.');
+    else if(pluieProbable) phrasesTemps.push('Il va pleuvoir.');
+    else if(meteo.picto==='soleil') phrasesTemps.push('Il va y avoir du soleil.');
+    else if(meteo.picto==='brouillard') phrasesTemps.push('Il va y avoir du brouillard.');
+    morceauxVoix=[...phrasesTemps, ...c.infos.map(i=>i.texte), ...c.phrase.split('\n')].map(x=>x.replace(/\u2011/g,'-'));
+    texteVoix=morceauxVoix.join(' ');
+  }else{
+    if(pictoAffiche!=='inconnu'){ $('svg').innerHTML=PICTOS.inconnu; pictoAffiche='inconnu'; }
+    document.body.dataset.meteo='';
+    $('mot').textContent=''; $('moment').textContent=''; $('temp').textContent='';
+    $('infos').innerHTML=''; $('habits').hidden=true; texteVoix=''; morceauxVoix=[];
+  }
+
+  if(DEMO) $('maj').textContent='Mode démonstration';
+  else if(donnees){
+    const r=new Date(donnees.recu), age=(now-r)/3600000;
+    $('maj').textContent='Mis à jour le '+r.getDate()+' '+MOIS[r.getMonth()]+' à '+String(r.getHours()).padStart(2,'0')+'h'+String(r.getMinutes()).padStart(2,'0')
+      +(donnees.modele&&donnees.modele!=='défaut'?' — MétéoSuisse':'')+(age>14?' — pas de Wi-Fi depuis un moment':'');
+  }else $('maj').textContent='Aucune donnée reçue pour le moment — vérifier le Wi-Fi';
+
+  gererEcran(now);
+  rechargerSiBesoin(now);
+  relanceCritique(now);
+  prechargeSoir(now);
+}
+
+/* précharge du soir : une demande à heure fixe avant l'extinction, pour avoir demain en réserve */
+let dernierePrecharge=null;
+function prechargeSoir(now){
+  if(!REGLAGES.precharge_soir||DEMO) return;
+  const jour=dateISO(now);
+  if(dernierePrecharge===jour||now.getHours()*60+now.getMinutes()!==minutes(REGLAGES.precharge_soir)) return;
+  dernierePrecharge=jour; mettreAJour();
+}
+
+/* pendant le créneau critique, insister jusqu'à avoir une météo du jour */
+let derniereRelance=0, miseAJourEnCours=false;
+function relanceCritique(now){
+  const C=REGLAGES.creneau_critique; if(!C||DEMO) return;
+  const m=now.getHours()*60+now.getMinutes();
+  if(m<minutes(C.debut)||m>=minutes(C.fin)) return;
+  const fraiche=donnees&&dateISO(new Date(donnees.recu))===dateISO(now);
+  if(fraiche) return;
+  if(Date.now()-derniereRelance<C.minutes*60*1000) return;
+  derniereRelance=Date.now(); mettreAJour();
+}
+
+/* ==========================================================
+   Lecture à voix haute (sur pression du bouton)
+   ========================================================== */
+const slug=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+let lectureEnCours=null;
+function lireIntegre(){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(texteVoix);
+  u.lang='fr-FR'; u.rate=0.85;
+  const voix=speechSynthesis.getVoices().find(v=>v.lang.startsWith('fr')); if(voix) u.voice=voix;
+  u.onstart=()=>$('ecouter').classList.add('parle');
+  u.onend=u.onerror=()=>$('ecouter').classList.remove('parle');
+  speechSynthesis.speak(u);
+}
+function lireFichiers(){
+  const id=Symbol(); lectureEnCours=id;
+  const liste=morceauxVoix.map(m=>REGLAGES.audio_dossier+slug(m)+'.mp3');
+  $('ecouter').classList.add('parle');
+  const suivant=i=>{
+    if(lectureEnCours!==id) return;
+    if(i>=liste.length){ $('ecouter').classList.remove('parle'); return; }
+    const a=new Audio(liste[i]);
+    a.onended=()=>setTimeout(()=>suivant(i+1),350);
+    a.onerror=()=>{ if(lectureEnCours===id){ lectureEnCours=null; lireIntegre(); } }; // fichier manquant : voix intégrée
+    a.play().catch(()=>{ if(lectureEnCours===id){ lectureEnCours=null; lireIntegre(); } });
+  };
+  suivant(0);
+}
+if('speechSynthesis' in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
+function lire(){
+  if(!texteVoix||!REGLAGES.voix) return;
+  lectureEnCours=null; if('speechSynthesis' in window) speechSynthesis.cancel();
+  if(REGLAGES.audio_dossier) lireFichiers(); else lireIntegre();
+}
+// Toute la page déclenche la voix. On utilise « click » (relâchement du doigt) et non « pointerdown » :
+// sur Android, seul le relâchement compte comme une action de l'utilisateur et autorise le son.
+document.body.addEventListener('click',e=>{ if(e.target.closest('.nuit')) return; lire(); });
+document.body.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter') lire(); });
+
+/* ==========================================================
+   Horaires d'écran, week-ends et jours fériés du canton du Jura
+   ========================================================== */
+function paques(annee){ // algorithme de Meeus
+  const a=annee%19,b=Math.floor(annee/100),c=annee%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),
+        g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,
+        m=Math.floor((a+11*h+22*l)/451),mois=Math.floor((h+l-7*m+114)/31),jour=((h+l-7*m+114)%31)+1;
+  return new Date(annee,mois-1,jour);
+}
+function plusJours(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function feriesFixesEtMobiles(y){
+  const R=REGLAGES, p=paques(y);
+  const fixes=[`${y}-01-01`,`${y}-01-02`,`${y}-05-01`,`${y}-06-23`,`${y}-08-01`,`${y}-08-15`,`${y}-12-25`];
+  if(R.toussaint) fixes.push(`${y}-11-01`);
+  const mobiles=[plusJours(p,-2),plusJours(p,1),plusJours(p,39),plusJours(p,50),plusJours(p,60)]; // Vendredi saint, Lundi de Pâques, Ascension, Lundi de Pentecôte, Fête-Dieu
+  return [...fixes,...mobiles.map(dateISO)];
+}
+function ferieFoyer(d){
+  const iso=dateISO(d), liste=feriesFixesEtMobiles(d.getFullYear());
+  if(liste.includes(iso)) return true;
+  if(!REGLAGES.ponts) return false;
+  if(d.getDay()===5) return liste.includes(dateISO(plusJours(d,-1)));  // vendredi après un jeudi férié
+  if(d.getDay()===1) return liste.includes(dateISO(plusJours(d,1)));   // lundi avant un mardi férié
+  return false;
+}
+function samediEntre(y,mois,jourMin){ // premier samedi à partir du jourMin (mois : 1–12)
+  const d=new Date(y,mois-1,jourMin,12); while(d.getDay()!==6) d.setDate(d.getDate()+1); return d;
+}
+function permanencesAnnee(y){
+  const ete=samediEntre(y,7,13), hiver=samediEntre(y,12,19);
+  return [[dateISO(ete),dateISO(plusJours(ete,22))],[dateISO(hiver),dateISO(plusJours(hiver,15))]];
+}
+function enPermanence(d){
+  const iso=dateISO(d), y=d.getFullYear();
+  const auto=REGLAGES.permanences_automatiques?[...permanencesAnnee(y-1),...permanencesAnnee(y)]:[];
+  return [...auto,...REGLAGES.permanences].some(([a,b])=>iso>=a&&iso<=b);
+}
+function typeDeJour(d){
+  if(enPermanence(d)) return 'permanence';
+  if(d.getDay()===0||d.getDay()===6||ferieFoyer(d)) return 'weekend';
+  return 'semaine';
+}
+function ecranDoitEtreAllume(now){
+  const plages=REGLAGES.horaires[typeDeJour(now)];
+  const m=now.getHours()*60+now.getMinutes();
+  return plages.some(([a,b])=>m>=minutes(a)&&m<minutes(b));
+}
+let etatEcran=null;
+function gererEcran(now){
+  if(!REGLAGES.gerer_l_ecran||DEMO) return;
+  const allume=ecranDoitEtreAllume(now);
+  if(allume===etatEcran) return;
+  etatEcran=allume;
+  const kiosk=!!(window.fully&&fully.turnScreenOn);
+  if(kiosk){ allume?fully.turnScreenOn():fully.turnScreenOff(); }                       // Fully Kiosk : vraie extinction
+  document.body.classList.toggle('nuit-active', !allume&&(kiosk||REGLAGES.ecran_noir_hors_kiosk)); // sinon : calque noir seulement si demandé
+  document.body.classList.toggle('hors-horaire', !allume&&!kiosk);
+  if(allume) mettreAJour();
+}
+
+/* rechargement quotidien de la page, seulement si le fichier est joignable */
+let dernierRechargement=null;
+function rechargerSiBesoin(now){
+  if(DEMO) return;
+  const jour=dateISO(now);
+  if(dernierRechargement===jour||now.getHours()*60+now.getMinutes()!==minutes(REGLAGES.recharger_a)) return;
+  dernierRechargement=jour;
+  if(location.protocol==='file:') return;
+  fetch(location.href,{cache:'no-store',method:'HEAD'}).then(r=>{ if(r.ok) location.reload(); }).catch(()=>{});
+}
+
+/* ==========================================================
+   Démarrage et cadence
+   ========================================================== */
+if(REGLAGES.animations) document.body.classList.add('anime');
+lireCache(); afficher(); mettreAJour();
+setInterval(mettreAJour, REGLAGES.rafraichir_minutes*60*1000);
+setInterval(afficher, 60*1000);
+window.addEventListener('online', mettreAJour);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) mettreAJour(); });
+</script>
+</body>
+</html>

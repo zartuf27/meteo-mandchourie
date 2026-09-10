@@ -1,0 +1,12 @@
+Pictogrammes : Mulberry Symbols — https://mulberrysymbols.org
+Copyright 2018-2026 Steve Lee — Licence Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Fichiers repris tels quels : soleil (sun), nuages (cloudy), pluie (rain), neige (snow), orage (thunder_storm),
+chaud (hot_person), gel (slippery), manteau (coat), bonnet (bobble_hat), veste (jacket_2), pull (jumper),
+tshirt (t-shirt), kway (raincoat), parapluie (umbrella), casquette (cap), eau (water).
+Fichiers composés à partir de Mulberry, sous la même licence : eclaircies (sun + cloudy), brouillard (cloudy + lignes).
+Fichier dessiné pour ce projet, placé sous la même licence : vent.
+
+Mention à faire figurer dans le dossier du projet ou au dos du cadre :
+« Pictogrammes : Mulberry Symbols, Steve Lee, CC BY-SA 4.0 »
