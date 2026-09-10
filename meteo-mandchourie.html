@@ -6,7 +6,7 @@
 <title>Météo – La Mandchourie</title>
 <style>
   :root{
-    --encre:#111111; --gris:#8C8C8C; --trait:#E6E6E6;
+    --encre:#111111; --gris:#707070; --trait:#E6E6E6;
     --soleil:#FFB703; --soleil2:#FB8500;
     --nuage:#C9D3DF; --nuage-fonce:#8FA0B5;
     --pluie:#2F6FD3; --orage:#5B4FA6; --brume:#C9D0D8; --vent:#5F5E5A;
@@ -55,7 +55,7 @@
 
   @media (orientation:portrait){
     .centre{grid-template-columns:1fr;grid-template-rows:1fr auto}
-    .picto svg{width:44vmin;height:44vmin}
+    .picto svg,.picto img{width:min(44vmin,40vh);height:min(44vmin,40vh)}
     .temp{font-size:26vmin}
     .habits{flex-wrap:wrap}
   }
@@ -255,8 +255,12 @@ const HABITS={
 const BANQUES={...PICTOS,...ICONES,...HABITS};
 function image(nom){
   if(!REGLAGES.images_dossier) return BANQUES[nom];
-  return `<img src="${REGLAGES.images_dossier+nom+REGLAGES.images_extension}" alt="" onerror="this.outerHTML=BANQUES['${nom}']">`;
+  return `<img src="${REGLAGES.images_dossier+nom+REGLAGES.images_extension}" alt="" data-fallback="${nom}">`;
 }
+document.addEventListener('error',e=>{
+  const img=e.target; if(img.tagName!=='IMG'||!img.dataset.fallback) return;
+  const svg=BANQUES[img.dataset.fallback]; if(svg) img.outerHTML=svg;
+},true);
 
 /* code météo WMO → picto, mot, pluie ?, neige ? */
 function interpreter(code){
@@ -302,7 +306,7 @@ function urlMeteo(modele){
     +(modele?`&models=${modele}`:'');
 }
 const CLE='meteo-mandchourie-v2';
-let donnees=null;
+let donnees=null, miseAJourEnCours=false;
 function lireCache(){ try{const t=localStorage.getItem(CLE); if(t) donnees=JSON.parse(t);}catch(e){} }
 function ecrireCache(){ try{localStorage.setItem(CLE, JSON.stringify(donnees));}catch(e){} }
 
@@ -399,7 +403,7 @@ function afficher(){
     if(tHabits<R.seuil_manteau) phrasesTemps.push('Il va faire très froid.');
     else if(tHabits<R.seuil_veste) phrasesTemps.push('Il va faire froid.');
     else if(tHabits<R.seuil_pull) phrasesTemps.push('Il va faire doux.');
-    else if(t<R.seuil_canicule) phrasesTemps.push('Il va faire chaud.');
+    else if(tHabits<R.seuil_canicule) phrasesTemps.push('Il va faire chaud.');
     if(meteo.neige) phrasesTemps.push('Il va neiger.');
     else if(meteo.picto==='orage') phrasesTemps.push('Il va y avoir de l\u2019orage.');
     else if(pluieProbable) phrasesTemps.push('Il va pleuvoir.');
@@ -437,7 +441,7 @@ function prechargeSoir(now){
 }
 
 /* pendant le créneau critique, insister jusqu'à avoir une météo du jour */
-let derniereRelance=0, miseAJourEnCours=false;
+let derniereRelance=0;
 function relanceCritique(now){
   const C=REGLAGES.creneau_critique; if(!C||DEMO) return;
   const m=now.getHours()*60+now.getMinutes();
@@ -467,13 +471,20 @@ function lireFichiers(){
   const id=Symbol(); lectureEnCours=id;
   const liste=morceauxVoix.map(m=>REGLAGES.audio_dossier+slug(m)+'.mp3');
   $('ecouter').classList.add('parle');
+  const lireUnMorceau=(texte,cb)=>{
+    if(!('speechSynthesis' in window)){ cb(); return; }
+    const u=new SpeechSynthesisUtterance(texte); u.lang='fr-FR'; u.rate=0.85;
+    const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('fr')); if(v) u.voice=v;
+    u.onend=u.onerror=cb; speechSynthesis.speak(u);
+  };
   const suivant=i=>{
     if(lectureEnCours!==id) return;
     if(i>=liste.length){ $('ecouter').classList.remove('parle'); return; }
     const a=new Audio(liste[i]);
     a.onended=()=>setTimeout(()=>suivant(i+1),350);
-    a.onerror=()=>{ if(lectureEnCours===id){ lectureEnCours=null; lireIntegre(); } }; // fichier manquant : voix intégrée
-    a.play().catch(()=>{ if(lectureEnCours===id){ lectureEnCours=null; lireIntegre(); } });
+    const fallback=()=>{ if(lectureEnCours===id) lireUnMorceau(morceauxVoix[i],()=>setTimeout(()=>suivant(i+1),350)); };
+    a.onerror=fallback;
+    a.play().catch(fallback);
   };
   suivant(0);
 }

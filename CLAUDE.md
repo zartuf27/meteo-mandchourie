@@ -162,7 +162,8 @@ Température de référence : le **ressenti** (`apparent_temperature`) si `resse
 
 | Condition | Pictos | Phrases |
 |---|---|---|
-| ressenti < 8 (`seuil_manteau`) ou neige | manteau, bonnet | Mettez un manteau chaud. / Mettez un bonnet. |
+| ressenti < 8 (`seuil_manteau`) ou neige | manteau | Mettez un manteau chaud. |
+| ressenti < 3 (`seuil_bonnet`) ou neige | + bonnet | Mettez un bonnet. |
 | < 15 (`seuil_veste`) | veste | Mettez une veste. |
 | < 21 (`seuil_pull`) | pull | Mettez un pull à longues manches. |
 | ≥ 21 | t-shirt | Mettez un t-shirt. |
@@ -226,10 +227,13 @@ N'importe quel toucher sur la page (`click` sur `body`), plus Espace/Entrée au 
 
 ### Deux modes
 1. **Voix intégrée** (`audio_dossier: ''`) : `speechSynthesis` du navigateur, `fr-FR`, débit 0,85. Sur Android, installer/choisir la voix française Google (Paramètres → Synthèse vocale) : nettement meilleure que la voix par défaut.
-2. **Phrases enregistrées** (`audio_dossier: 'audio/'`) : un fichier MP3 par phrase, nommé par le slug de la phrase (minuscules, sans accents, tirets ; ex. `il-va-pleuvoir.mp3`, `mettez-un-k-way.mp3`). Les morceaux sont enchaînés avec 350 ms de pause. Si un fichier manque ou ne peut pas être lu, la voix intégrée prend le relais pour toute la phrase.
+2. **Phrases enregistrées** (`audio_dossier: 'audio/'`) : un fichier MP3 par phrase, nommé par le slug de la phrase (minuscules, sans accents, tirets ; ex. `il-va-pleuvoir.mp3`, `mettez-un-k-way.mp3`). Les morceaux sont enchaînés avec 350 ms de pause. Si un fichier manque ou ne peut pas être lu, la voix intégrée prend le relais pour ce morceau seul, puis la lecture des fichiers suivants reprend normalement.
+
+### `generer-audio-edge.py` (recommandé)
+Génère les 22 fichiers avec la voix Microsoft Edge (gratuit, sans clé). Voix par défaut : `fr-CH-ArianeNeural` (accent suisse romand, femme) ; `--voix fr-CH-FabriceNeural` pour une voix d'homme. Volume +30 %, débit −10 %. Installation : `pip install edge-tts`. Les fichiers existants ne sont pas régénérés.
 
 ### `generer-audio.py`
-Génère les 22 fichiers avec ElevenLabs (modèle `eleven_multilingual_v2`, voix « Charlotte » par défaut, changeable avec `--voix <id>`). Environ 500 caractères : le plan gratuit suffit. Clé dans la variable d'environnement `ELEVENLABS_API_KEY`. Les fichiers existants ne sont pas régénérés. La liste des phrases du script doit rester identique à celle de la page.
+Même chose avec ElevenLabs (modèle `eleven_multilingual_v2`, voix « Charlotte » par défaut, changeable avec `--voix <id>`). Environ 500 caractères : le plan gratuit suffit. Clé dans la variable d'environnement `ELEVENLABS_API_KEY`. Les fichiers existants ne sont pas régénérés. La liste des phrases du script doit rester identique à celle de la page.
 
 ### Contrainte Android
 Le son n'est autorisé qu'après une action de l'utilisateur au relâchement (`click`), jamais au simple `pointerdown`. Dans Fully Kiosk, activer « Autoplay Audio » supprime aussi le blocage du tout premier appui après redémarrage.
@@ -281,9 +285,11 @@ C'est la seule partie du fichier qu'un collègue doit modifier.
 | `recharger_a` | 12:00 | rechargement quotidien |
 | `animations` | false | FALC |
 | `voix` | true | lecture à voix haute |
-| `audio_dossier` | `''` | phrases enregistrées |
-| `images_dossier` / `images_extension` | `''` / `.png` | pictos de remplacement |
-| `seuil_manteau` … `seuil_vent` | 8 / 15 / 21 / 28 / 32 / 0 / 40 | seuils d'habillement et d'alerte |
+| `audio_dossier` | `'audio/'` | phrases enregistrées (voix Ariane, Edge TTS, +30 % volume). `''` = voix intégrée |
+| `images_dossier` / `images_extension` | `'images/'` / `.svg` | pictogrammes Mulberry Symbols livrés. `''` = pictos dessinés uniquement |
+| `seuil_manteau` | 8 | sous cette température : manteau chaud |
+| `seuil_bonnet` | 3 | sous cette température : bonnet (indépendant du manteau) |
+| `seuil_veste` … `seuil_vent` | 15 / 21 / 28 / 32 / 0 / 40 | veste / pull / chaleur / canicule / gel / vent |
 
 ---
 
